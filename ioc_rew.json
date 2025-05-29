@@ -1,0 +1,56 @@
+import json
+from lxml import etree
+
+def create_openioc_from_json(json_path, xml_output_path):
+    with open(json_path, "r") as f:
+        data = json.load(f)
+
+    NSMAP = {
+        None: "http://schemas.mandiant.com/2010/OpenIOC",
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance"
+    }
+
+    ioc = etree.Element("OpenIOC",
+                        id=data.get("id", "ioc-unknown"),
+                        last_modified=data.get("last_modified", "2025-01-01T00:00:00"),
+                        nsmap=NSMAP)
+
+    ioc.set("{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation", "OpenIOC_1.1.xsd")
+
+    short_desc = etree.SubElement(ioc, "short_description")
+    short_desc.text = data.get("description", "No description")
+
+    definition = etree.SubElement(ioc, "definition")
+    indicator = etree.SubElement(definition, "Indicator", operator="AND")
+
+    def add_indicator_item(parent, condition, document, search, ctype, content_value):
+        item = etree.SubElement(parent, "IndicatorItem",
+                                condition=condition,
+                                document=document,
+                                search=search,
+                                type=ctype)
+        etree.SubElement(item, "Context",
+                         document=document,
+                         search=search,
+                         type=ctype)
+        content = etree.SubElement(item, "Content", type=ctype)
+        content.text = content_value
+
+    # Thêm các IndicatorItem tùy theo loại IOC
+    # Ví dụ dành cho brute force sẽ check IP, port và event_type failed_login
+    add_indicator_item(indicator, "is", "Network", "SourceIP", "string", data.get("ip", ""))
+    add_indicator_item(indicator, "is", "Network", "DestinationPort", "string", data.get("port", ""))
+    add_indicator_item(indicator, "is", "Event", "EventType", "string", data.get("event_type", ""))
+
+    xml_bytes = etree.tostring(ioc, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+    with open(xml_output_path, "wb") as f:
+        f.write(xml_bytes)
+
+    print(f"Tạo file {xml_output_path} thành công!")
+
+# Tạo IOC cho DDoS
+create_openioc_from_json("ioc_raw.json", "ioc_web_ddos.xml")
+
+# Tạo IOC cho Brute force
+create_openioc_from_json("ioc_bruteforce.json", "ioc_ssh_bruteforce.xml")
+
