@@ -1,9 +1,29 @@
 {
-  "ip": "192.168.222.129",
-  "port": "80",
-  "tcp_flag": "A",
-  "description": "Web server bị tấn công DDoS (ACK Flood)",
   "id": "ioc-web-ddos-001",
-  "last_modified": "2025-05-29T00:00:00"
+  "last_modified": "2025-05-29T00:00:00",
+  "description": "Web server bị tấn công DDoS (ACK Flood)",
+  "indicators": [
+    {
+      "condition": "is",
+      "document": "Network",
+      "search": "DestinationPort",
+      "type": "string",
+      "content": "80"
+    },
+    {
+      "condition": "is",
+      "document": "Network",
+      "search": "IP",
+      "type": "string",
+      "content": "192.168.222.129"
+    },
+    {
+      "condition": "contains",
+      "document": "Network",
+      "search": "TCPFlags",
+      "type": "string",
+      "content": "A"
+    }
+  ]
 }
 
